@@ -30,7 +30,6 @@ def quadruples(l):
     nSubLists = int(len(l)/4)
   else:
     nSubLists = int(len(l)/4) + 1
-
   lastSubList = nSubLists-1
   newL = nSubLists*[0]
   # create n-1 sublists since they will be guaranteed to be length 4
@@ -60,7 +59,7 @@ def past_tense(l):
   newL = len(l)*[0]
   for w in l:
     lastC = w[len(w)-1]; wIdx = l.index(w)
-    if(isSpecialCase(w)):
+    if(isSpecialCase(w)): # check if in special case dictionary
        newL[wIdx] = specialCases[w.lower()]
     elif(isCons(w[len(w)-3]) and isVowel(w[len(w)-2]) and isCons(lastC)):
       newL[wIdx] = w.replace(lastC,lastC+lastC.lower()+'ed')
@@ -68,7 +67,7 @@ def past_tense(l):
       newL[wIdx] = w.replace('y','ied')
     elif(isVowel(lastC)):
       newL[wIdx] = w+'d'
-    else:
+    else: # all other cases (excluding other special cases)
       newL[wIdx] = w+'ed'
   return newL
 
