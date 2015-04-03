@@ -13,12 +13,24 @@ def six_x_cubed_plus_5(n):
 #This function takes a coded message and an integer then returns
 #a decoded message.
 def mystery_code(msg,num):
+  decoded = ''
+  done = False
   cIter = iter(msg)
-  #while iterator is not empty
-  #  get next value
-  #  check if digit, or lowercase, etc
+  while( not done ):
+    try:
+      c = next(cIter)
+      if c == ' ': # spaces
+        decoded += chr(ord(' ')+num)
+      else:
+        decoded += c
 
-  # differences between ascii values are either for odd: n,n-2,(n+1)/2,(n+1)/2+2
+    except StopIteration:
+      done = True
+
+  return decoded
+
+
+
 #############
 #Problem 1.3#
 #############
@@ -72,6 +84,7 @@ def past_tense(l):
   return newL
 
 def main():
+  ### TODO: add these calls and outputs to "a1examplesplus.txt"
   # Probelm 1: test
   # print( "six_x_cubed_plus_5(2) --> "+str(six_x_cubed_plus_5(2)) )
   # print( "six_x_cubed_plus_510) --> "+str(six_x_cubed_plus_5(10)) )
@@ -81,6 +94,8 @@ def main():
   # print( "quadruples --> "+ str(quadruples([2, 5, 1.5, 100, 3, 8, 7, 1, 1, 1, 2, -5, 3, 'c'])) )
   # print( "past_tense --> "+ str(past_tense(['program', 'debug', 'execute', 'crash', 'repeat', 'eat'])) )
   # print( "past_tense --> "+ str(past_tense(['have', 'be', 'go','eat'])) )
-  print( "past_tense --> "+ str(past_tense(['prograM', 'DEBUG', 'execute', 'crASH', 'repEAt', 'Eat'])) )
+  # print( "past_tense --> "+ str(past_tense(['try', 'DEBUG', 'execute', 'crASH', 'repEAt', 'Eat'])) )
+  print( "mystery_code --> "+mystery_code("abc Iz th1s Secure? n0, no, 9!", 21) )
+  print( "desired output   twv5\o5a}$f5Fpv`gp*5{%95{z95,4" )
 
 main()
