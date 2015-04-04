@@ -3,7 +3,7 @@
 #Problem 1.1#
 #############
 def cube(x):
-  return int(x**3)
+  return x**3
 #This function returns the output for the function 6*n^3 + 5
 def six_x_cubed_plus_5(n):
   return 6*cube(n)+5
@@ -12,25 +12,15 @@ def six_x_cubed_plus_5(n):
 #############
 #This function takes a coded message and an integer then returns
 #a decoded message.
-def mystery_code(msg,num):
-  decoded = ''
-  done = False
-  cIter = iter(msg)
-  while( not done ):
-    try:
-      c = next(cIter)
-      if c == ' ': # spaces
-        decoded += chr(ord(' ')+num)
-      else:
-        decoded += c
-
-    except StopIteration:
-      done = True
-
-  return decoded
-
-
-
+def mystery_code(encoded,num):
+  if isinstance(num,float):
+    num = int(num)                          # make sure number is valid
+  if num < 0:                               # non-negative and integer
+    num = abs(num)
+  asciiIn = [ord(char) for char in encoded] # transform input msg to ascii
+  asciiOut = [val^num for val in asciiIn]   # decode message
+  decoded = [chr(val) for val in asciiOut]  # convert ascii to chars
+  return ''.join(decoded)
 #############
 #Problem 1.3#
 #############
@@ -54,7 +44,8 @@ def quadruples(l):
 #Problem 1.4#
 #############
 # dictionary of special case verbs
-specialCases = {'have':'had','be':'been','eat':'ate','go':'went'}
+specialCases = {'to have':'had','to be':'were','to eat':'ate','to go':'went',\
+  'have':'had','be':'were','eat':'ate','go':'went'}
 vowels       = {'a','e','i','o','u'}
 def isVowel(c):
   return c.lower() in vowels
@@ -62,8 +53,8 @@ def isCons(c):
   caseInSens = c.lower()
   return caseInSens.isalpha() and not isVowel(caseInSens)
 def isSpecialCase(w):
-  isSpecial = [x for x in specialCases]
-  return w.lower() in isSpecial
+  wSpecial = [x for x in specialCases]
+  return w.lower() in wSpecial
 #This function takes a single list of verbs and returns a list of
 #of those verbs in past tense form. All modifications appear in
 #lowercase.
@@ -84,18 +75,32 @@ def past_tense(l):
   return newL
 
 def main():
-  ### TODO: add these calls and outputs to "a1examplesplus.txt"
-  # Probelm 1: test
-  # print( "six_x_cubed_plus_5(2) --> "+str(six_x_cubed_plus_5(2)) )
-  # print( "six_x_cubed_plus_510) --> "+str(six_x_cubed_plus_5(10)) )
-  # print( "six_x_cubed_plus_5(59.4) --> "+str(six_x_cubed_plus_5(59.4)) )
-  # print( "quadruples --> "+ str(quadruples([2, 5, 1.5, 100, 3, 8, 7, 1, 1])) )
-  # print( "quadruples --> "+ str(quadruples([2, 5, 1.5, 100, 3, 8])) )
-  # print( "quadruples --> "+ str(quadruples([2, 5, 1.5, 100, 3, 8, 7, 1, 1, 1, 2, -5, 3, 'c'])) )
-  # print( "past_tense --> "+ str(past_tense(['program', 'debug', 'execute', 'crash', 'repeat', 'eat'])) )
-  # print( "past_tense --> "+ str(past_tense(['have', 'be', 'go','eat'])) )
-  # print( "past_tense --> "+ str(past_tense(['try', 'DEBUG', 'execute', 'crASH', 'repEAt', 'Eat'])) )
-  print( "mystery_code --> "+mystery_code("abc Iz th1s Secure? n0, no, 9!", 21) )
-  print( "desired output   twv5\o5a}$f5Fpv`gp*5{%95{z95,4" )
+  f = open('a1examplesplus.txt','w')
+  f.write( """This file contains the input and output of all functions within a1.py.""" )
+  f.write( '\n\n#############\n#Problem A.1#\n#############\n\n')
+  f.write( "six_x_cubed_plus_5(2)\n>>> "+str(six_x_cubed_plus_5(2))+"\n" )
+  f.write( "six_x_cubed_plus_5(-10)\n>>> "+str(six_x_cubed_plus_5(-10))+"\n" )
+  f.write( "six_x_cubed_plus_5(2/3)\n>>> "+str(six_x_cubed_plus_5(-2/3))+"\n" )
+  f.write( '\n\n#############\n#Problem A.2#\n#############\n\n')
+  f.write( "quadruples([2, 5, 1.5, 100, 3, 8, 7, 1, 1])\n>>> "+ \
+         str(quadruples([2, 5, 1.5, 100, 3, 8, 7, 1, 1]))+"\n" )
+  f.write( "quadruples([2, 5, 1.5, 100, 3, 8])\n>>> "+ \
+         str(quadruples([2, 5, 1.5, 100, 3, 8]))+"\n" )
+  f.write( "quadruples([2, 5, 1.5, 100, 3, 8, 7, 1, 1, 1, 2, -5, 3, 'c'])\n>>> "+ \
+         str(quadruples([2, 5, 1.5, 100, 3, 8, 7, 1, 1, 1, 2, -5, 3, 'c']))+"\n" )
+  f.write( '\n\n#############\n#Problem A.3#\n#############\n\n')
+  f.write( "past_tense(['program', 'debug', 'execute', 'crash', 'repeat', 'eat']\n>>> "+ \
+         str(past_tense(['program', 'debug', 'execute', 'crash', 'repeat', 'eat']))+"\n" )
+  f.write( "past_tense(['to have', 'to be', 'to go','to eat']\n>>> "+ \
+         str(past_tense(['to have', 'to be', 'to go','to eat']))+"\n" )
+  f.write( "past_tense(['try', 'DEBUG', 'EXECUTE', 'crASH', 'repEAt', 'Eat']\n>>> "+ \
+         str(past_tense(['try', 'DEBUG', 'execute', 'crASH', 'repEAt', 'Eat']))+"\n" )
+  f.write( '\n\n#############\n#Problem A.4#\n#############\n\n')
+  f.write( "mystery_code(\'abc Iz th1s Secure? n0, no, 9!\',21)\n>>> "+\
+         mystery_code("abc Iz th1s Secure? n0, no, 9!", 21)+"\n" )
+  f.write( "mystery_code(\'abc Iz th1s Secure? n0, no, 9!\',-1)\n>>> "+\
+         mystery_code("abc Iz th1s Secure? n0, no, 9!", -1)+"\n" )
+  f.write( "mystery_code(\'this has   tabs  only\', 21.1)\n>>> "+\
+         mystery_code("this has   tabs  only", 21.1)+"\n" )
 
 main()
