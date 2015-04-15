@@ -95,7 +95,8 @@ def main():
          str(past_tense(['to have', 'to be', 'to go','to eat']))+"\n" )
   f.write( "past_tense(['try', 'DEBUG', 'EXECUTE', 'crASH', 'repEAt', 'Eat']\n>>> "+ \
          str(past_tense(['try', 'DEBUG', 'execute', 'crASH', 'repEAt', 'Eat']))+"\n" )
-  f.write( '\n\n#############\n#Problem A.4#\n#############\n\n')
+  f.write( "\n\n#############\n#Problem A.4#\n#############\n#*note: mystery_code self corrects illegal inputs\
+  such as floating point or negative values\n\n")
   f.write( "mystery_code(\'abc Iz th1s Secure? n0, no, 9!\',21)\n>>> "+\
          mystery_code("abc Iz th1s Secure? n0, no, 9!", 21)+"\n" )
   f.write( "mystery_code(\'abc Iz th1s Secure? n0, no, 9!\',-1)\n>>> "+\

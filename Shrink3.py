@@ -10,77 +10,83 @@
 
 from re import *   # Loads the regular expression module.
 
-def Shrink():
-    'Shrink is the top-level function, containing the main loop.'
-    print('They call me the Shrink.  Welcome to my sofa!')
-    print('So what is your problem?')
-    while True:
-        the_input = input('TYPE HERE:>> ')
-        if match('bye',the_input):
-            print('Goodbye!')
-            return
-        wordlist = split(' ',remove_punctuation(the_input))
-        # undo any initial capitalization:
-        wordlist[0]=wordlist[0].lower()
-        mapped_wordlist = you_me_map(wordlist)
-        mapped_wordlist[0]=mapped_wordlist[0].capitalize()
-        respond(the_input, wordlist, mapped_wordlist)
+# def Shrink():
+#     'Shrink is the top-level function, containing the main loop.'
+#     introduce()
+#     while True:
+#         the_input = input('TYPE HERE:>> ')
+#         if match('bye',the_input):
+#             print('Goodbye!')
+#             return
+#         print(respond(the_input))
 
-def respond(the_input, wordlist, mapped_wordlist):
-    if wordlist[0]=='':
-        print("Please say something.")
-        return
-    if wordlist[0:2] == ['i','am']:
-        print("Please tell me why you are " +\
-              stringify(mapped_wordlist[2:]) + '.')
-        return
-    if wpred(wordlist[0]):
-        print("You tell me " + wordlist[0] + ".")
-        return
-    if wordlist[0:2] == ['i','have']:
-        print("How long have you had " +\
-              stringify(mapped_wordlist[2:]) + '.')
-        return
-    if wordlist[0:2] == ['i','feel']:
-        print("I sometimes feel the same way.")
-        return
-    if 'because' in wordlist:
-        print("Is that really the reason?")
-        return
-    if 'yes' in wordlist:
-        print("How can you be so sure?")
-        return
-    if wordlist[0:2] == ['you','are']:
-        print("Oh yeah, I am " +\
-              stringify(mapped_wordlist[2:]) + '.')
-        return
-    if verbp(wordlist[0]):
-        print("Why do you want me to " +\
-              stringify(mapped_wordlist) + '?')
-        return
-    if wordlist[0:3] == ['do','you','think']:
-        print("I think you should answer that yourself.")
-        return
-    if wordlist[0:2]==['can','you'] or wordlist[0:2]==['could','you']:
-        print("Perhaps I " + wordlist[0] + ' ' +\
-             stringify(mapped_wordlist[2:]) + '.')
-        return
-    if 'dream' in wordlist:
-        print("For dream analysis see Freud.")
-        return
-    if 'love' in wordlist:
-        print("All's fair in love and war.")
-        return
-    if 'no' in wordlist:
-        print("Don't be so negative.")
-        return
-    if 'maybe' in wordlist:
-        print("Be more decisive.")
-        return
-    if 'you' in mapped_wordlist or 'You' in mapped_wordlist:
-        print(stringify(mapped_wordlist) + '.')
-        return
-    print(punt())
+def agentName():
+  return "Shrink"
+
+def introduce():
+  return "They call me the Shrink.  Welcome to my sofa! So what is your problem?"
+
+
+def respond(the_input):
+  wordlist = split(' ',remove_punctuation(the_input))
+  # undo any initial capitalization:
+  wordlist[0]=wordlist[0].lower()
+  mapped_wordlist = you_me_map(wordlist)
+  mapped_wordlist[0]=mapped_wordlist[0].capitalize()
+
+  if wordlist[0]=='':
+      return("Please say something.")
+  if wordlist[0:2] == ['i','am']:
+      return("Please tell me why you are " +\
+            stringify(mapped_wordlist[2:]) + '.')
+
+  if wpred(wordlist[0]):
+      return("You tell me " + wordlist[0] + ".")
+
+  if wordlist[0:2] == ['i','have']:
+      return("How long have you had " +\
+            stringify(mapped_wordlist[2:]) + '.')
+
+  if wordlist[0:2] == ['i','feel']:
+      return("I sometimes feel the same way.")
+
+  if 'because' in wordlist:
+      return("Is that really the reason?")
+
+  if 'yes' in wordlist:
+      return("How can you be so sure?")
+
+  if wordlist[0:2] == ['you','are']:
+      return("Oh yeah, I am " +\
+            stringify(mapped_wordlist[2:]) + '.')
+
+  if verbp(wordlist[0]):
+      return("Why do you want me to " +\
+            stringify(mapped_wordlist) + '?')
+
+  if wordlist[0:3] == ['do','you','think']:
+      return("I think you should answer that yourself.")
+
+  if wordlist[0:2]==['can','you'] or wordlist[0:2]==['could','you']:
+      return("Perhaps I " + wordlist[0] + ' ' +\
+           stringify(mapped_wordlist[2:]) + '.')
+
+  if 'dream' in wordlist:
+      return("For dream analysis see Freud.")
+
+  if 'love' in wordlist:
+      return("All's fair in love and war.")
+
+  if 'no' in wordlist:
+      return("Don't be so negative.")
+
+  if 'maybe' in wordlist:
+      return("Be more decisive.")
+
+  if 'you' in mapped_wordlist or 'You' in mapped_wordlist:
+      return(stringify(mapped_wordlist) + '.')
+
+  return(punt())
 
 def stringify(wordlist):
     'Create a string from wordlist, but with spaces between words.'
@@ -137,4 +143,4 @@ def verbp(w):
                   'put', 'turn', 'compute', 'think', 'drink',
                   'blink', 'crash', 'crunch', 'add'])
 
-Shrink() # Launch the program.
+# Shrink() # Launch the program.
