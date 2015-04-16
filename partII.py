@@ -23,19 +23,22 @@ SYNONYMS = {}
 def store_isa_fact(category1, category2):
     'Stores one fact of the form A BIRD IS AN ANIMAL'
     # That is, a member of CATEGORY1 is a member of CATEGORY2
+    # find rep and store isa fact using the rep
     try :
-        c1list = ISA[category1]
+        c1list = ISA[get_rep(category1)]
         c1list.append(category2)
     except KeyError :
-        ISA[category1] = [category2]
+        ISA[get_rep(category1)] = [category2]
     try :
-        c2list = INCLUDES[category2]
+        c2list = INCLUDES[get_rep(category2)]
         c2list.append(category1)
     except KeyError :
-        INCLUDES[category2] = [category1]
+        INCLUDES[get_rep(category2)] = [category1]
 
 def get_isa_list(category1):
     'Retrieves any existing list of things that CATEGORY1 is a'
+    # find rep
+    category1 = get_rep(category1)
     try:
         c1list = ISA[category1]
         return c1list
@@ -44,6 +47,8 @@ def get_isa_list(category1):
 
 def get_includes_list(category1):
     'Retrieves any existing list of things that CATEGORY1 includes'
+    # find rep
+    category1 = get_rep(category1)
     try:
         c1list = INCLUDES[category1]
         return c1list
@@ -52,11 +57,15 @@ def get_includes_list(category1):
 
 def isa_test1(category1, category2):
     'Returns True if category 2 is (directly) on the list for category 1.'
-    c1list = get_isa_list(category1)
+    # find reps
+    c1list = [get_rep(x) for x in get_isa_list(category1)]
+    category2 = get_rep(category2)
     return c1list.__contains__(category2)
 
 def isa_test(category1, category2, depth_limit = 10):
     'Returns True if category 1 is a subset of category 2 within depth_limit levels'
+    # find reps
+    category1 = get_rep(category1); category2 = get_rep(category2)
     if category1 == category2 : return True
     if isa_test1(category1, category2) : return True
     if depth_limit < 2 : return False
@@ -70,12 +79,22 @@ def store_article(noun, article):
     ARTICLES[noun] = article.lower()
 
 def get_article(noun):
+    # find rep
+    noun = get_rep(noun)
     'Returns the article associated with the noun, or if none, the empty string.'
     try:
         article = ARTICLES[noun]
         return article
     except KeyError:
         return ''
+
+def get_rep(noun):
+  'returns representative of noun'
+  rep = isAnotherNameFor(noun)
+  if( rep != ''):
+    return rep
+  else:
+    return noun
 
 def linneus():
     'The main loop; it gets and processes user input, until "bye".'
@@ -110,9 +129,10 @@ def process(info) :
           print("Yes, but "+ report_link([y,x])+" because "+ report_chain(y,x)+\
                 "... I'm not going to remember that "+ report_link([x,y]) +" unless you insist.")
       else:
-        store_isa_fact(items[1], items[3])
+        store_isa_fact(x,y)
         print("I understand.")
       print('***isa: '+str(ISA))
+      print('***includes: '+str(INCLUDES))
       return
 
     'converts user sentence into wordlist'
@@ -121,6 +141,7 @@ def process(info) :
       print('user insists, so we are handling '+x+' and '+y)
       handle_cycle(x,y)
       print('***isa: '+str(ISA))
+      print('***includes: '+str(INCLUDES))
       return
 
 
@@ -128,20 +149,29 @@ def process(info) :
     if result_match_object != None :
       items = result_match_object.groups()
       answer = isa_test(items[1], items[3])
+      x = get_rep(items[1]); y = get_rep(items[3])
       if answer :
-          print("Yes, it is.")
+          print("Yes, "+get_article(x)+" "+x+" is "+get_article(y)+" "+y)
       else :
           print("No, as far as I have been informed, it is not.")
       return
     result_match_object = what_pattern.match(info)
     if result_match_object != None :
       items = result_match_object.groups()
+      #check if item is a synonym --> "another name for ..."
+      rep = isAnotherNameFor(items[1])
+      if( rep != ''):
+        print(get_article(items[1])+" "+items[1]+\
+              " is another name for "+get_article(rep)+" "+rep+'.')
+        return
       supersets = get_isa_list(items[1])
       if supersets != [] :
-          first = supersets[0]
+        # use last for reps and first for others
+          if items[1] in SYNONYMS: super = supersets[-1]
+          else: super = supersets[0]
           a1 = get_article(items[1]).capitalize()
-          a2 = get_article(first)
-          print(a1 + " " + items[1] + " is " + a2 + " " + first + ".")
+          a2 = get_article(super)
+          print(a1 + " " + items[1] + " is " + a2 + " " + super + ".")
           return
       else :
           subsets = get_includes_list(items[1])
@@ -152,7 +182,13 @@ def process(info) :
               print(a1 + " " + items[1] + " is something more general than " + a2 + " " + first + ".")
               return
           else :
-              print("I don't know.")
+              if items[1] in SYNONYMS: #if representative, then print synonym chain
+                synonym_chain = SYNONYMS[items[1]][0]
+                for ii in SYNONYMS[items[1]][1:-1]: synonym_chain += ','+ii
+                synonym_chain += ', and '+SYNONYMS[items[1]][-1]
+                print(get_article(items[1]).capitalize()+" "+items[1]+" is a representative of "+synonym_chain+'.')
+              else:
+                print("I don't know.")
       return
     result_match_object = why_pattern.match(info)
     if result_match_object != None :
@@ -212,20 +248,38 @@ def detected_cycle(x,y):
 
 def handle_cycle(x,y):
   'make x representative of y and all of it\'s super classes'
-  chain = find_chain(y,x)
+  chain = find_chain(y,x) # y < x
   SYNONYMS[x] = []
+  INCLUDES[x] = [] # includes nothing because all items in chain are now synonyms
+  if not x in ISA: ISA[x] = []
   for link in chain:
-    SYNONYMS[x].append(link[0])
-    if link[0] in SYNONYMS: #sub-synonym loop within larger synonym loop
-      SYNONYMS[x].append(SYNONYMS[link[0]])
-      del SYNONYMS[link[0]]
-    list = ISA[link[0]]
-    print('list '+link[0]+':'+str(list))
-    del list[:]
-  print('chain: '+str(chain))
-  print('synonyms: '+str(SYNONYMS))
+    isAnX = link[0]
+    if isAnX in SYNONYMS: #if isAnX is a rep, transfer it's members under new rep -- it is no longer a rep
+      for item in SYNONYMS[isAnX]: SYNONYMS[x].append(item)
+      del SYNONYMS[isAnX]
+    SYNONYMS[x].append(isAnX)
 
+    #replace items in ISA and INCLUDE dict with representative
+    for item in ISA[isAnX][1:]:
+      ISA[x].append(item) #transfer transitive relations of subclass to rep
+    # isAnX may be a leaf node
+    if isAnX in INCLUDES:
+      for item in INCLUDES[isAnX]:
+        if item in ISA: # subclass, but not included in loop
+          INCLUDES[x].append(item)
+      del INCLUDES[isAnX]
+    del ISA[isAnX]
+    del ARTICLES[isAnX]
+  print('chain: '+str(chain)) #test#
+  print('synonyms: '+str(SYNONYMS)) #test#
   return True
+
+def isAnotherNameFor(x):
+  'Returns either an empty string or an item from SYNONYMS'
+  for syn in SYNONYMS:
+    if SYNONYMS[syn].__contains__(x):
+      return syn
+  return ''
 
 def test() :
     process("A turtle is a reptile.")
