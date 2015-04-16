@@ -18,6 +18,7 @@ from re import *   # Loads the regular expression module.
 ISA = {}
 INCLUDES = {}
 ARTICLES = {}
+SYNONYMS = {}
 
 def store_isa_fact(category1, category2):
     'Stores one fact of the form A BIRD IS AN ANIMAL'
@@ -92,60 +93,76 @@ what_pattern = compile(r"^What\s+is\s+(a|an)\s+([-\w]+)(\?\.)*", IGNORECASE)
 why_pattern = compile(r"^Why\s+is\s+(a|an)\s+([-\w]+)\s+(a|an)\s+([-\w]+)(\?\.)*", IGNORECASE)
 
 def process(info) :
+    global items,x,y
     'Handles the user sentence, matching and responding.'
     result_match_object = assertion_pattern.match(info)
     if result_match_object != None :
-        items = result_match_object.groups()
-        x = items[1];y = items[3]
-        store_article(x, items[0])
-        store_article(y, items[2])
-        if detect_cycle(x,y):
-          print("Yes, but "+ report_link([y,x])+" because "+ report_chain(y,x))
-        else:
-          store_isa_fact(items[1], items[3])
-          print("I understand.")
+      items = result_match_object.groups()
+      x = items[1];y = items[3]
+      store_article(x, items[0])
+      store_article(y, items[2])
+      # check if fact produces antisymmetry before adding it
+      if detected_cycle(x,y):
+        if isa_test1(y,x): # direct relation
+          print("Yes, but "+ report_link([y,x])+" because you told me that... I'm not going to remember that "+\
+                 report_link([x,y]) +" unless you insist.")
+        else: # transient relation
+          print("Yes, but "+ report_link([y,x])+" because "+ report_chain(y,x)+\
+                "... I'm not going to remember that "+ report_link([x,y]) +" unless you insist.")
+      else:
+        store_isa_fact(items[1], items[3])
+        print("I understand.")
+      print('***isa: '+str(ISA))
+      return
+
+    'converts user sentence into wordlist'
+    wordlist = info.split(' '); wordlist = [w.lower() for w in wordlist]
+    if detected_cycle(x,y) and 'insist' in wordlist:
+      print('user insists, so we are handling '+x+' and '+y)
+      handle_cycle(x,y)
+      print('***isa: '+str(ISA))
+      return
 
 
-
-        return
     result_match_object = query_pattern.match(info)
     if result_match_object != None :
-        items = result_match_object.groups()
-        answer = isa_test(items[1], items[3])
-        if answer :
-            print("Yes, it is.")
-        else :
-            print("No, as far as I have been informed, it is not.")
-        return
+      items = result_match_object.groups()
+      answer = isa_test(items[1], items[3])
+      if answer :
+          print("Yes, it is.")
+      else :
+          print("No, as far as I have been informed, it is not.")
+      return
     result_match_object = what_pattern.match(info)
     if result_match_object != None :
-        items = result_match_object.groups()
-        supersets = get_isa_list(items[1])
-        if supersets != [] :
-            first = supersets[0]
-            a1 = get_article(items[1]).capitalize()
-            a2 = get_article(first)
-            print(a1 + " " + items[1] + " is " + a2 + " " + first + ".")
-            return
-        else :
-            subsets = get_includes_list(items[1])
-            if subsets != [] :
-                first = subsets[0]
-                a1 = get_article(items[1]).capitalize()
-                a2 = get_article(first)
-                print(a1 + " " + items[1] + " is something more general than " + a2 + " " + first + ".")
-                return
-            else :
-                print("I don't know.")
-        return
+      items = result_match_object.groups()
+      supersets = get_isa_list(items[1])
+      if supersets != [] :
+          first = supersets[0]
+          a1 = get_article(items[1]).capitalize()
+          a2 = get_article(first)
+          print(a1 + " " + items[1] + " is " + a2 + " " + first + ".")
+          return
+      else :
+          subsets = get_includes_list(items[1])
+          if subsets != [] :
+              first = subsets[0]
+              a1 = get_article(items[1]).capitalize()
+              a2 = get_article(first)
+              print(a1 + " " + items[1] + " is something more general than " + a2 + " " + first + ".")
+              return
+          else :
+              print("I don't know.")
+      return
     result_match_object = why_pattern.match(info)
     if result_match_object != None :
-        items = result_match_object.groups()
-        if not isa_test(items[1], items[3]) :
-            print("But that's not true, as far as I know!")
-        else:
-            answer_why(items[1], items[3])
-        return
+      items = result_match_object.groups()
+      if not isa_test(items[1], items[3]) :
+          print("But that's not true, as far as I know!")
+      else:
+          answer_why(items[1], items[3])
+      return
+
     print("I do not understand.  You entered: ")
     print(info)
 
@@ -166,10 +183,9 @@ def report_chain(x, y):
     chain = find_chain(x, y)
     all_but_last = chain[0:-1]
     last_link = chain[-1]
-    main_phrase = reduce(lambda x, y: x + y, map(report_link, all_but_last))
-    last_phrase = "and " + report_link(last_link)
-    new_last_phrase = last_phrase[0:-2] + '.'
-    return main_phrase + new_last_phrase
+    main_phrase = reduce(lambda x, y: x+", "+y, map(report_link, all_but_last))
+    last_phrase = ", and " + report_link(last_link)
+    return main_phrase + last_phrase
 
 def report_link(link):
     'Returns a phrase that describes one fact.'
@@ -177,7 +193,7 @@ def report_link(link):
     y = link[1]
     a1 = get_article(x)
     a2 = get_article(y)
-    return a1 + " " + x + " is " + a2 + " " + y+ ", "
+    return a1 + " " + x + " is " + a2 + " " + y
 
 def find_chain(x, z):
     'Returns a list of lists, which each sublist representing a link.'
@@ -190,10 +206,26 @@ def find_chain(x, z):
                 temp.insert(0, [x,y])
                 return temp
 
-def detect_cycle(x,y):
-  'Returns true if arguments are connected by loop'
-  # check if x includes y
+def detected_cycle(x,y):
+  'Returns true if x includes y'
   return isa_test(y,x)
+
+def handle_cycle(x,y):
+  'make x representative of y and all of it\'s super classes'
+  chain = find_chain(y,x)
+  SYNONYMS[x] = []
+  for link in chain:
+    SYNONYMS[x].append(link[0])
+    if link[0] in SYNONYMS: #sub-synonym loop within larger synonym loop
+      SYNONYMS[x].append(SYNONYMS[link[0]])
+      del SYNONYMS[link[0]]
+    list = ISA[link[0]]
+    print('list '+link[0]+':'+str(list))
+    del list[:]
+  print('chain: '+str(chain))
+  print('synonyms: '+str(SYNONYMS))
+
+  return True
 
 def test() :
     process("A turtle is a reptile.")
