@@ -1,13 +1,17 @@
 #!/usr/bin/python3.4
-# Linneus3.py
-# Implements storage and inference on an ISA hierarchy
-# This Python program goes with the book "The Elements of Artificial
-# Intelligence".
-# This version runs under Python 3.x.
+'''PartII.py
+Bilkit Githinji,1263465, CSE 415, Spring 2015, University of Washington
+Instructor:  S. Tanimoto.
 
-# Steven Tanimoto
-# (C) 2012.
+Assignment 2 Part II.  ISA Hierarchy Manipulation
+Status of the implementation of new features:
 
+1. (Cycle detection) implemented and working.
+2. (Cycle processing) implemented and working -- with proper plurality
+3. (Why, with antisymmetry) implemented and working.
+4. (Retraction of inferrable consequences) implemented and working.
+
+'''
 # The ISA relation is represented using a dictionary, ISA.
 # There is a corresponding inverse dictionary, INCLUDES.
 # Each entry in the ISA dictionary is of the form
@@ -94,6 +98,17 @@ def get_rep(noun):
   else:
     return noun
 
+def get_synonym_chain(noun):
+  synonym_chain = get_article(SYNONYMS[noun][0])+' '+SYNONYMS[noun][0]
+
+  if len(SYNONYMS[noun]) < 3:
+    if len(SYNONYMS[noun]) < 2: return synonym_chain
+    else: synonym_chain += ' and '+get_article(SYNONYMS[noun][-1])+' '+SYNONYMS[noun][-1]
+  else:
+    for ii in SYNONYMS[noun][1:-1]: synonym_chain += ','+get_article(ii)+' '+ii
+    synonym_chain += ', and '+get_article(SYNONYMS[noun][-1])+' '+SYNONYMS[noun][-1]
+  return synonym_chain
+
 def linneus():
     'The main loop; it gets and processes user input, until "bye".'
     print('This is Linneus.  Please tell me "ISA" facts and ask questions.')
@@ -138,19 +153,30 @@ def process(info) :
           print("I understand.")
       print('***isa: '+str(ISA))
       print('***includes: '+str(INCLUDES))
+      print('***synonyms: '+str(SYNONYMS)) #test#
+
       return
 
     'converts user sentence into wordlist'
     wordlist = info.split(' '); wordlist = [w.lower() for w in wordlist]
     if detected_cycle(x,y) and 'insist' in wordlist:
-      print('user insists, so we are handling '+x+' and '+y)
       handle_cycle(x,y)
-      print('***isa: '+str(ISA))
-      print('***includes: '+str(INCLUDES))
+      # use proper plurality
+      if len(SYNONYMS[x]) == 1:
+        print('Ok, then I will infer that '+get_article(SYNONYMS[x][0])+' '+SYNONYMS[x][0]+' is a synonym for '+\
+            get_article(x)+" "+x+'.')
+      else:
+        print('Ok, then I will infer that '+get_synonym_chain(x)+' are synonyms for '+\
+            get_article(x)+" "+x+'.')
+      # print('***isa: '+str(ISA))
+      # print('***includes: '+str(INCLUDES))
+      # print('***synonyms: '+str(SYNONYMS)) #test#
+
       return
     if 'can\'t' in wordlist or 'not' in wordlist:
       x = wordlist[5]; y = wordlist[8]
       chain = find_chain(get_rep(x),get_rep(y))
+      print(chain)
       if chain != None:
         # perform reduction: remove sub class
         omitted.append([x,y])
@@ -236,10 +262,8 @@ def process(info) :
               return
           else :
               if items[1] in SYNONYMS: #if representative, then print synonym chain
-                synonym_chain = SYNONYMS[items[1]][0]
-                for ii in SYNONYMS[items[1]][1:-1]: synonym_chain += ','+ii
-                synonym_chain += ', and '+SYNONYMS[items[1]][-1]
-                print(get_article(items[1]).capitalize()+" "+items[1]+" is a representative of "+synonym_chain+'.')
+                print(get_article(items[1]).capitalize()+" "+items[1]+" is a representative of "+\
+                      get_synonym_chain(items[1])+'.')
               else:
                 print("I don't know.")
       return
@@ -261,8 +285,8 @@ def answer_why(x, y):
     if x == y:
       print("Because they are identical.")
       return
-    # if isa_test1(x, y):
-    if(get_rep(x) == x and get_rep(y) == y):
+    # report answer demonstrating link antisymmetry
+    if(get_rep(x) == x and get_rep(y) == y): # direct
       print("Because you told me that.")
     elif(get_rep(x) == x and get_rep(y) != y):
       answer+=get_article(x)+" "+x+" is another name for "+get_article(get_rep(x))+" "+get_rep(x)+\
@@ -270,9 +294,9 @@ def answer_why(x, y):
     elif(get_rep(x) != x and get_rep(y) == y):
       answer+=report_chain(x,get_rep(y))+", and "+get_article(get_rep(y))+" "+get_rep(y)+" is another name for "+\
       get_article(y)+" "+y+"."
-    else:
+    else: # both are synonyms
       answer+=get_article(x)+" "+x+" is another name for "+get_article(get_rep(x))+" "+get_rep(x)+", "+\
-        report_chain(get_rep(x),y)+', and '+get_article(get_rep(y))+" "+get_rep(y)+\
+        report_chain(get_rep(x),get_rep(y))+', and '+get_article(get_rep(y))+" "+get_rep(y)+\
               " is another name for "+get_article(y)+" "+y+"."
       print(answer)
       return
@@ -281,6 +305,7 @@ def answer_why(x, y):
 from functools import reduce
 def report_chain(x, y):
     'Returns a phrase that describes a chain of facts.'
+    if isa_test1(x,y): return report_link([x,y]) # handle direct relations
     chain = find_chain(x, y)
     all_but_last = chain[0:-1]
     last_link = chain[-1]
@@ -334,7 +359,6 @@ def handle_cycle(x,y):
           INCLUDES[x].append(item)
       del INCLUDES[isAnX]
     del ISA[isAnX]
-    print('***synonyms: '+str(SYNONYMS)) #test#
   return True
 
 def isAnotherNameFor(x):
@@ -346,9 +370,9 @@ def isAnotherNameFor(x):
 
 def test() :
     process("A turtle is a reptile.")
-    # process("A turtle is a shelled-creature.")
-    # process("A reptile is an animal.")
-    # process("An animal is a thing.")
+    process("A turtle is a shelled-creature.")
+    process("A reptile is an animal.")
+    process("An animal is a thing.")
 
 test()
 linneus()
