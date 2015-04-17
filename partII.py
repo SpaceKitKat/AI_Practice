@@ -79,8 +79,6 @@ def store_article(noun, article):
     ARTICLES[noun] = article.lower()
 
 def get_article(noun):
-    # find rep
-    noun = get_rep(noun)
     'Returns the article associated with the noun, or if none, the empty string.'
     try:
         article = ARTICLES[noun]
@@ -204,14 +202,26 @@ def process(info) :
 
 def answer_why(x, y):
     'Handles the answering of a Why question.'
+    answer = "Because "
     if x == y:
-        print("Because they are identical.")
-        return
-    if isa_test1(x, y):
-        print("Because you told me that.")
-        return
+      print("Because they are identical.")
+      return
+    # if isa_test1(x, y):
+    if(get_rep(x) == x and get_rep(y) == y):
+      print("Because you told me that.")
+    elif(get_rep(x) == x and get_rep(y) != y):
+      answer+=get_article(x)+" "+x+" is another name for "+get_article(get_rep(x))+" "+get_rep(x)+\
+      +", and "+report_chain(get_rep(x),y)+"."
+    elif(get_rep(x) != x and get_rep(y) == y):
+      answer+=report_chain(x,get_rep(y))+", and "+get_article(get_rep(y))+" "+get_rep(y)+" is another name for "+\
+      get_article(y)+" "+y+"."
+    else:
+      answer+=get_article(x)+" "+x+" is another name for "+get_article(get_rep(x))+" "+get_rep(x)+", "+\
+        report_chain(get_rep(x),y)+', and '+get_article(get_rep(y))+" "+get_rep(y)+\
+              " is another name for "+get_article(y)+" "+y+"."
+      print(answer)
+      return
     print("Because " + report_chain(x, y))
-    return
 
 from functools import reduce
 def report_chain(x, y):
@@ -249,8 +259,8 @@ def detected_cycle(x,y):
 def handle_cycle(x,y):
   'make x representative of y and all of it\'s super classes'
   chain = find_chain(y,x) # y < x
-  SYNONYMS[x] = []
   INCLUDES[x] = [] # includes nothing because all items in chain are now synonyms
+  if not x in SYNONYMS: SYNONYMS[x] = []
   if not x in ISA: ISA[x] = []
   for link in chain:
     isAnX = link[0]
@@ -269,9 +279,7 @@ def handle_cycle(x,y):
           INCLUDES[x].append(item)
       del INCLUDES[isAnX]
     del ISA[isAnX]
-    del ARTICLES[isAnX]
-  print('chain: '+str(chain)) #test#
-  print('synonyms: '+str(SYNONYMS)) #test#
+    print('***synonyms: '+str(SYNONYMS)) #test#
   return True
 
 def isAnotherNameFor(x):
