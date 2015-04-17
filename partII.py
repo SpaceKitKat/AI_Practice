@@ -108,9 +108,12 @@ assertion_pattern = compile(r"^(a|an|A|An)\s+([-\w]+)\s+is\s+(a|an)\s+([-\w]+)(\
 query_pattern = compile(r"^is\s+(a|an)\s+([-\w]+)\s+(a|an)\s+([-\w]+)(\?\.)*", IGNORECASE)
 what_pattern = compile(r"^What\s+is\s+(a|an)\s+([-\w]+)(\?\.)*", IGNORECASE)
 why_pattern = compile(r"^Why\s+is\s+(a|an)\s+([-\w]+)\s+(a|an)\s+([-\w]+)(\?\.)*", IGNORECASE)
+reduce_flag = False
+to_reduce = []
+omitted = []
 
 def process(info) :
-    global items,x,y
+    global items,x,y,reduce_flag
     'Handles the user sentence, matching and responding.'
     result_match_object = assertion_pattern.match(info)
     if result_match_object != None :
@@ -127,8 +130,12 @@ def process(info) :
           print("Yes, but "+ report_link([y,x])+" because "+ report_chain(y,x)+\
                 "... I'm not going to remember that "+ report_link([x,y]) +" unless you insist.")
       else:
-        store_isa_fact(x,y)
-        print("I understand.")
+        # avoid dupes
+        if isa_test(get_rep(x),get_rep(y)):
+          print('I already know that...')
+        else:
+          store_isa_fact(x,y)
+          print("I understand.")
       print('***isa: '+str(ISA))
       print('***includes: '+str(INCLUDES))
       return
@@ -141,8 +148,56 @@ def process(info) :
       print('***isa: '+str(ISA))
       print('***includes: '+str(INCLUDES))
       return
-
-
+    if 'can\'t' in wordlist or 'not' in wordlist:
+      x = wordlist[5]; y = wordlist[8]
+      chain = find_chain(get_rep(x),get_rep(y))
+      if chain != None:
+        # perform reduction: remove sub class
+        omitted.append([x,y])
+        if(get_rep(x) != x):
+          del ISA[get_rep(x)]
+        else:
+          del ISA[x]
+        # note all possible links to remove
+        if len(chain) > 1:
+          for link in chain[1:]: to_reduce.append(link)
+          # more reductions are possible - prompt for another reduction
+          print('Shall I forget that '+get_article(to_reduce[0][0])+" "+to_reduce[0][0]+\
+            " is "+get_article(to_reduce[0][1])+' '+to_reduce[0][1]+'?')
+          reduce_flag = True
+        else: #  direct relationship
+          # perform reduction: remove general class
+          if(get_rep(y) != y):
+            del INCLUDES[get_rep(y)]
+          else:
+            del INCLUDES[y]
+          print('Ok, it is no longer that '+report_link(omitted[0]))
+      else:
+        print('I already know that.')
+      return
+    # check if another reduction is possible
+    if reduce_flag:
+      report_omitted = report_link(omitted[0])
+      # perform reduction if user agrees
+      if 'yes' in wordlist: #delete link form isa and includes list
+        omitted.append(to_reduce[0])
+        del ISA[to_reduce[0][0]]
+        del INCLUDES[to_reduce[0][1]]
+      # delete link from to reduce regardless of response
+      del to_reduce[0]
+      # check if another reduction is possible - prompt for another reduction
+      if to_reduce != []:
+        print('Shall I forget that '+get_article(to_reduce[0][0])+" "+to_reduce[0][0]+\
+              " is "+get_article(to_reduce[0][1])+' '+to_reduce[0][1]+'?')
+      else:
+        for link in omitted[1:-1]: report_omitted += ', '+report_link(link)
+        print('Ok, it is no longer that '+report_omitted+", or "+report_link(omitted[-1]))
+        # reset
+        reduce_flag = False
+      return
+    else:
+      del omitted[:]
+      del to_reduce[:]
     result_match_object = query_pattern.match(info)
     if result_match_object != None :
       items = result_match_object.groups()
