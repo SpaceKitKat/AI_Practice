@@ -9,7 +9,9 @@ Status of the implementation of new features:
 1. (Cycle detection) implemented and working.
 2. (Cycle processing) implemented and working -- with proper plurality
 3. (Why, with antisymmetry) implemented and working.
-4. (Retraction of inferrable consequences) implemented and working.
+4. (Retraction of inferrable consequences) implemented and working --
+  in case the graph is very large, user is prompted only a few times
+  to continue forgetting things.
 
 '''
 # The ISA relation is represented using a dictionary, ISA.
@@ -124,11 +126,12 @@ query_pattern = compile(r"^is\s+(a|an)\s+([-\w]+)\s+(a|an)\s+([-\w]+)(\?\.)*", I
 what_pattern = compile(r"^What\s+is\s+(a|an)\s+([-\w]+)(\?\.)*", IGNORECASE)
 why_pattern = compile(r"^Why\s+is\s+(a|an)\s+([-\w]+)\s+(a|an)\s+([-\w]+)(\?\.)*", IGNORECASE)
 reduce_flag = False
+reduction_prompt_count = 0
 to_reduce = []
 omitted = []
 
 def process(info) :
-    global items,x,y,reduce_flag
+    global items,x,y,reduce_flag,reduction_prompt_count
     'Handles the user sentence, matching and responding.'
     result_match_object = assertion_pattern.match(info)
     if result_match_object != None :
@@ -151,9 +154,9 @@ def process(info) :
         else:
           store_isa_fact(x,y)
           print("I understand.")
-      print('***isa: '+str(ISA))
-      print('***includes: '+str(INCLUDES))
-      print('***synonyms: '+str(SYNONYMS)) #test#
+      # print('***isa: '+str(ISA))
+      # print('***includes: '+str(INCLUDES))
+      # print('***synonyms: '+str(SYNONYMS)) #test#
 
       return
 
@@ -174,35 +177,50 @@ def process(info) :
 
       return
     if 'can\'t' in wordlist or 'not' in wordlist:
-      x = wordlist[5]; y = wordlist[8]
+      try:
+        x = wordlist[5]; y = wordlist[8]
+      except IndexError:
+        print("""Please restate that as 'It can't be that a/an __ is a/an __.'""")
+        return
       chain = find_chain(get_rep(x),get_rep(y))
       print(chain)
       if chain != None:
         # perform reduction: remove sub class
         omitted.append([x,y])
-        if(get_rep(x) != x):
-          del ISA[get_rep(x)]
-        else:
-          del ISA[x]
-        # note all possible links to remove
         if len(chain) > 1:
-          for link in chain[1:]: to_reduce.append(link)
+          for link in chain:
+            x = link[0]; y = link[1]
+            if(get_rep(x) != x):
+              del ISA[get_rep(x)]
+            else:
+              del ISA[x]
+            if(get_rep(y) != y):
+              del INCLUDES[get_rep(y)]
+            else:
+              del INCLUDES[y]
+            omitted.append([x,y])
+        else: #  direct relationship
+          print('Ok, it is no longer that '+report_link(omitted[0]))
+        # note all possible links to remove
+        for item in ISA:
+          for ll in ISA[item]:
+            to_reduce.append([item,ll])
+        if(to_reduce != None):
+          reduce_flag = True
           # more reductions are possible - prompt for another reduction
+          reduction_prompt_count += 1
           print('Shall I forget that '+get_article(to_reduce[0][0])+" "+to_reduce[0][0]+\
             " is "+get_article(to_reduce[0][1])+' '+to_reduce[0][1]+'?')
-          reduce_flag = True
-        else: #  direct relationship
-          # perform reduction: remove general class
-          if(get_rep(y) != y):
-            del INCLUDES[get_rep(y)]
-          else:
-            del INCLUDES[y]
-          print('Ok, it is no longer that '+report_link(omitted[0]))
       else:
         print('I already know that.')
       return
     # check if another reduction is possible
     if reduce_flag:
+      if(reduction_prompt_count > 3):
+        print('Ok, let me know if there is anything else I should forget.')
+        reduction_prompt_count = 0
+        reduce_flag = False
+        return
       report_omitted = report_link(omitted[0])
       # perform reduction if user agrees
       if 'yes' in wordlist: #delete link form isa and includes list
@@ -213,11 +231,15 @@ def process(info) :
       del to_reduce[0]
       # check if another reduction is possible - prompt for another reduction
       if to_reduce != []:
+        reduction_prompt_count += 1
         print('Shall I forget that '+get_article(to_reduce[0][0])+" "+to_reduce[0][0]+\
               " is "+get_article(to_reduce[0][1])+' '+to_reduce[0][1]+'?')
       else:
         for link in omitted[1:-1]: report_omitted += ', '+report_link(link)
-        print('Ok, it is no longer that '+report_omitted+", or "+report_link(omitted[-1]))
+        if len(to_reduce) == 1:
+          print('Ok, it is no longer that '+report_omitted)
+        else:
+          print('Ok, it is no longer that '+report_omitted+", or "+report_link(omitted[-1]))
         # reset
         reduce_flag = False
       return
@@ -368,11 +390,11 @@ def isAnotherNameFor(x):
       return syn
   return ''
 
-def test() :
-    process("A turtle is a reptile.")
-    process("A turtle is a shelled-creature.")
-    process("A reptile is an animal.")
-    process("An animal is a thing.")
-
-test()
+# def test() :
+#     process("A turtle is a reptile.")
+#     process("A turtle is a shelled-creature.")
+#     process("A reptile is an animal.")
+#     process("An animal is a thing.")
+#
+# test()
 linneus()
