@@ -25,7 +25,6 @@ It is designed to work according to the QUIET tools interface.
 
 #<COMMON_DATA>
 N_DIM = 3
-GOAL_STATE = [x for x in range(0,N_DIM**2)]
 #</COMMON_DATA>
 
 #<COMMON_CODE>
@@ -66,7 +65,7 @@ def can_move(s,src,dst):
     # # if val at dst is zero then legal move
     if src >= 0: # positions must be within board
       if dst < N_DIM**2:
-        if(abs(src-dst)==1 or abs(src-dst) == 3): # blocks must be neighbors
+        if(abs(src-dst)==1 or abs(src-dst) == N_DIM): # blocks must be neighbors
           return s[dst] == 0 or s[src] == 0 # block at destination must be 'empty'
     else:
       print('can only move to and from positive indices')
@@ -102,7 +101,51 @@ class Operator:
   def apply(self, s):
     return self.state_transf(s)
 
+## HEURISTIC FUNCTIONS ##
+def euclidean(state):
+  'Returns sum of differences between each block in state and each\
+  corresponding block in goal state.'
+  score=0
+  for b in state:
+    score += abs( state.index(b) - GOAL_STATE.index(b))
+  return score
+
+def hamming(state):
+  'Returns count of mismatched blocks between state and goal state'
+  score=0
+  for b in state:
+    if state.index(b) != GOAL_STATE.index(b):
+      score += 1
+  return score
+
+def manhattan(state):
+  'Returns sum of row and column differences between each block in\
+   state and each corresponding block in goal state.'
+  global row_count
+  score = 0
+  for b in state:
+    row_count = col_count = 0
+    count_rows(abs( state.index(b) - GOAL_STATE.index(b)))
+    col_count = abs(state.index(b)%N_DIM - GOAL_STATE.index(b)%N_DIM)
+    # DEBUG #
+    # print('block '+str(b)+' = '+str(row_count)+' drows, '+str(col_count)+' dcols')
+    score+=row_count+col_count
+  return score
+
+def count_rows(idiff):
+  'Recursively counts rows based on index difference between two blocks'
+  global row_count
+  if idiff < N_DIM:
+    return
+  row_count+=1
+  count_rows(idiff-N_DIM) # move one row closer until in same row
+## HEURISTIC FUNCTIONS ##
+
 #</COMMON_CODE>
+
+#<GOAL_STATE>
+GOAL_STATE = [x for x in range(0,N_DIM**2)]
+#<GOAL_STATE>
 
 #<INITIAL_STATE>
 INITIAL_STATE ={0:[0, 1, 2, 3, 4, 5, 6, 7, 8],\
@@ -119,7 +162,7 @@ DUMMY_STATE =  []
 # left or right --> diff of 1 (special case for right edges),
 # and avoid redundancy of swap os
 swaps = [(ii,jj) for ii in range(0,N_DIM**2) for jj in range(0,N_DIM**2)\
-         if ( ((ii+1)%3!=0 and abs(ii-jj)==1) or abs(ii-jj)==3 ) and ii<jj]
+         if ( ((ii+1)%N_DIM!=0 and abs(ii-jj)==1) or abs(ii-jj)==N_DIM ) and ii<jj]
 
 # swap_combinations = [('pos'+str(a),'pos'+str(b)) for (a,b) in swaps]
 OPERATORS = [Operator("Swap blocks at positions "+str(p)+" and "+str(q),
@@ -130,6 +173,11 @@ OPERATORS = [Operator("Swap blocks at positions "+str(p)+" and "+str(q),
                       lambda s,p=p,q=q: move(s,p,q) )
              for (p,q) in swaps]#for (p,q) in swap_combinations]
 #</OPERATORS>
+
+#</HEURISTICS>
+HEURISTICS = {'h_euclidean':lambda s:euclidean(s)}
+#</HEURISTICS>
+
 
 #<GOAL_TEST> (optional)
 GOAL_TEST = lambda s: goal_test(s)
