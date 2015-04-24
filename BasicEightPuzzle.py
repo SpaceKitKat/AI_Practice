@@ -175,7 +175,10 @@ OPERATORS = [Operator("Swap blocks at positions "+str(p)+" and "+str(q),
 #</OPERATORS>
 
 #</HEURISTICS>
-HEURISTICS = {'h_euclidean':lambda s:euclidean(s)}
+HEURISTICS = {'h_euclidean':lambda s:euclidean(s),
+              'h_hamming':lambda s:hamming(s),
+              'h_manhattan':lambda s:manhattan(s)}
+CALC_H = lambda x:HEURISTICS[x]
 #</HEURISTICS>
 
 
