@@ -1,0 +1,63 @@
+A3_PartII_Report.txt
+Bilkit Githinji, 1263465. CSE 415, Spring 2015, University of Washington
+Instructor:  S. Tanimoto.
+
+Heuristic Performance Analysis:
+  Puzzle Type - BasicEightPuzzle
+
+
+  Initial State - [1,4,2,3,7,0,6,8,5]
+    [1][4][2]
+    [3][7]   
+    [6][8][5]
+  
+  
+ 	|  h_euclidean	|   h_hamming	|   h_manhattan
+--------|---------------|---------------|-----------------
+ success|    yes	|      yes	|	yes	
+	|		|		|
+explored|    19		|	5	|	20
+ states	|		|		|
+
+
+  Initial State - [3,1,2,4,0,5,6,7,8]
+    [3][1][2]
+    [4]   [5]
+    [6][7][8]  
+  
+ 	|  h_euclidean	|   h_hamming	|   h_manhattan
+--------|---------------|---------------|-----------------
+ success|    yes	|      yes	|	yes	
+	|		|		|
+explored|    2		|	2	|	2
+ states	|		|		|
+
+
+  Initial State - [1,8,2,5,0,4,6,3,7]
+    [1][8][2]
+    [5][4]   
+    [6][3][7]  
+  
+ 	|  h_euclidean	|   h_hamming	|   h_manhattan
+--------|---------------|---------------|-----------------
+ success|    yes	|      yes	|	yes	
+	|		|		|
+explored|    194	|      893	|	953
+ states	|		|		|
+
+
+  Initial State - [0,8,2,5,1,4,6,3,7]
+    [1][8][2]
+    [5][4]   
+    [6][3][7]  
+   
+  
+ 	|  h_euclidean	|   h_hamming	|   h_manhattan
+--------|---------------|---------------|-----------------
+ success|    yes	|      yes	|	yes	
+	|		|		|
+explored|    2073	|     1111	|	1398	
+ states	|		|		|
+
+
+
