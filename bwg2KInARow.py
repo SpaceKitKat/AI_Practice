@@ -11,6 +11,8 @@ SIDE=0
 K_WIN=0
 OP_NAME=""
 
+metWinCond=False
+
 def_count=-1
 DEFAULT_REMARK=[]
 
@@ -35,6 +37,7 @@ def prepare(init_state,K,what_side,op_name):
     return
 
   if what_side.lower()=='x': SIDE=1
+  print('side='+str(SIDE))
 
   init_valid_square_lists()
   # init_board=parse_state(init_state)
@@ -48,13 +51,13 @@ def prepare(init_state,K,what_side,op_name):
   return True
 
 
-MAX_PLY=4
+MAX_PLY=2
 NEG_INF=-100000
 POS_INF=100000
 def makeMove(currState, currRemark, timeLim=10000):
   global ZOBRIST_VALS,Z_HASH_TABLE,DIM,K_WIN,SIDE,OP_NAME
 
-  newboard=[]
+  newboard=[];move=(0,0)
 
   bestEval=mini_max(currState[0],currState[1],MAX_PLY)
   if bestEval == NEG_INF or bestEval == POS_INF:
@@ -62,13 +65,21 @@ def makeMove(currState, currRemark, timeLim=10000):
     return
   # find single ply state with matching mini_max score
   for z in Z_HASH_TABLE:
+    # print(display_board(Z_HASH_TABLE[z][0]))
     if (Z_HASH_TABLE[z][2] == 1) and (Z_HASH_TABLE[z][1] == bestEval):
       newboard=Z_HASH_TABLE[z][0]
   if newboard == []:
     raise ValueError("new board not generated" )
     return
 
-  print("newboard\n"+display_board(newboard)+"bestVal="+str(bestEval)) #DEBUG#
+  move=get_move(currState[0],newboard)
+
+  #DEBUG#
+  print("currstate\n"+display_board(currState[0])+\
+        currState[1]+" placed at "+str(move)+\
+        "\nnewboard\n"+display_board(newboard)+\
+        "bestVal="+str(bestEval)) #DEBUG#
+
 
   #convert to state
 
@@ -77,7 +88,7 @@ def makeMove(currState, currRemark, timeLim=10000):
 
 #pass whoseMove= 'x' or 'o'
 def mini_max(board,whoseMove,plyRemaining):
-  global Z_HASH_TABLE
+  global Z_HASH_TABLE,metWinCond
 
   successors=[]
   # determine if max or min player
@@ -94,21 +105,27 @@ def mini_max(board,whoseMove,plyRemaining):
     minimaxVal=100000
     successors=get_successors(board,'o')
   #DEBUG#
-  print("ply: "+str(MAX_PLY-plyRemaining)+"\twhose turn: "+who+"\n"+display_board(board)+"get successors...")
+  # print("ply: "+str(MAX_PLY-plyRemaining)+"\twhose turn: "+who+"\n"+display_board(board)+"get successors...")
   for s in successors:
+        # no need to check the others if win condition is met
+    if metWinCond: print('won='+str(minimaxVal));return minimaxVal
+
     newVal=mini_max(s,get_other(whoseMove),plyRemaining-1)
     # get max or min static eval score based on whose move
     if(who=='max' and newVal>minimaxVal) or (who=='min' and newVal<minimaxVal):
-      minimaxVal=newVal; print("ply "+str(MAX_PLY-plyRemaining)+"--> "+str(newVal)) #DEBUG#
+      minimaxVal=newVal
+      # print("ply "+str(MAX_PLY-plyRemaining)+"--> "+str(newVal)) #DEBUG#
+
     if MAX_PLY-plyRemaining != 0: # store all but root and leaves in hash table
       Z_HASH_TABLE[z_hash_code(board)] = [board,newVal,MAX_PLY-plyRemaining]
-    # print("***store\n"+display_board(board)+"val="+str(newVal)+"\tply="+str(MAX_PLY-plyRemaining))#DEBUG#
+      # print("***store\n"+display_board(board)+"val="+str(newVal)+"\tply="+str(MAX_PLY-plyRemaining))#DEBUG#
+
 
   return minimaxVal
 
 
 def staticEval(board):
-  global K_WIN,DIM,SIDE,UD,LR,D2,D2
+  global K_WIN,DIM,SIDE,UD,LR,D2,D2,metWinCond
   'calculates hs for state 1xNXM'
   count=[]; hs=0
   for ii in range(DIM[0]):
@@ -118,26 +135,30 @@ def staticEval(board):
       if sq != '-': # check if forbidden
         if (ii,jj) in UD:
           count= count_in_line([board[ii+n][jj] for n in range(K_WIN)])
-          if count[SIDE]>0: hs+=10**(count[SIDE]-1) #add player's count
-          if count[(SIDE+1)%2]>0: hs-=10**(count[(SIDE+1)%2]-1) #subtract opponent's count
+          if count[SIDE] == K_WIN: metWinCond=True
+          if count[1]>0: hs+=10**(count[1]-1) #add player's count
+          if count[0]>0: hs-=10**(count[0]-1) #subtract opponent's count
           # print("ud window:\t"+str([state[ii+n][jj] for n in range(K_WIN)])) #DEBUG#
           # print("count:\t"+str(count))
         if (ii,jj) in LR:
           count= count_in_line([board[ii][jj+n] for n in range(K_WIN)])
-          if count[SIDE]>0: hs+=10**(count[SIDE]-1) #add player's count
-          if count[(SIDE+1)%2]>0: hs-=10**(count[(SIDE+1)%2]-1) #subtract opponent's count
+          if count[SIDE] == K_WIN: metWinCond=True
+          if count[1]>0: hs+=10**(count[1]-1) #add player's count
+          if count[0]>0: hs-=10**(count[0]-1) #subtract opponent's count
           # print("lr window:\t"+str([state[ii][jj+n] for n in range(K_WIN)])) #DEBUG#
           # print("count:\t"+str(count))
         if (ii,jj) in D1:
           count= count_in_line([board[ii+n][jj-n] for n in range(K_WIN)])
-          if count[SIDE]>0: hs+=10**(count[SIDE]-1) #add player's count
-          if count[(SIDE+1)%2]>0: hs-=10**(count[(SIDE+1)%2]-1) #subtract opponent's count
+          if count[SIDE] == K_WIN: metWinCond=True
+          if count[1]>0: hs+=10**(count[1]-1) #add player's count
+          if count[0]>0: hs-=10**(count[0]-1) #subtract opponent's count
           # print("d1 window:\t"+str([state[ii+n][jj-n] for n in range(K_WIN)])) #DEBUG#
           # print("count:\t"+str(count))
         if (ii,jj) in D2:
           count= count_in_line([board[ii+n][jj+n] for n in range(K_WIN)])
-          if count[SIDE]>0: hs+=10**(count[SIDE]-1) #add player's count
-          if count[(SIDE+1)%2]>0: hs-=10**(count[(SIDE+1)%2]-1) #subtract opponent's count
+          if count[SIDE] == K_WIN: metWinCond=True
+          if count[1]>0: hs+=10**(count[1]-1) #add player's count
+          if count[0]>0: hs-=10**(count[0]-1) #subtract opponent's count
           # print("d2 window:\t"+str([state[ii+n][jj+n] for n in range(K_WIN)])) #DEBUG#
           # print("count:\t"+str(count))
 
@@ -162,6 +183,13 @@ def get_successors(state,who):
 def get_other(whoseMove):
   if whoseMove.lower() == 'x': return 'o'
   else: return 'x'
+
+def get_move(b1,b2):
+  for ii in range(DIM[0]):
+    for jj in range(DIM[1]):
+      if b1[ii][jj] != b2[ii][jj]: return(ii,jj)
+  return None
+
 
 def count_in_line(list):
   '''list of characters containing x's,o'x,spaces,or dashes. This function counts
@@ -229,13 +257,13 @@ def z_hash_code(board):
 def display_board(b):
   global DIM
 
-  txt="+"+3*DIM[0]*"-"+"+"+"\n"
+  txt="+"+3*DIM[1]*"-"+"+"+"\n"
   for row in b:
       txt+="|"
       for item in row:
           txt+=" "+item+" "
       txt+="|\n"
-  txt+="+"+3*DIM[0]*"-"+"+"+"\n"
+  txt+="+"+3*DIM[1]*"-"+"+"+"\n"
   return txt
 
 def introduce():
@@ -315,12 +343,13 @@ def you_me_map(wordlist):
 #<TEST>#
 def test():
   state=game.INITIAL_STATE
-  prepare(state,game.K,'X',"noname")
+  state[1]='o'
+
+  prepare(state,game.K,state[1],"noname")
   # print("hash init state= "+str(z_hash_code( state[0] )))
   # print("staticE="+str(staticEval(state[0])))
   # print("successors:\n"+str(len(get_successors(state[0],'x'))))
   # print("minimax for x: "+str(mini_max(state[0],state[1],2)))
-  state[1]='o'
   makeMove(state, "")
   # print("minimax for o: "+str(mini_max(state[0],'o',2)))
   # print("other for x: "+get_other('x'))
