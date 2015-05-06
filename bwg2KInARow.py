@@ -3,8 +3,8 @@
 from re import *   # Loads the regular expression module.
 from random import randint
 from copy import deepcopy
-# import FiveInARowGameType as game
-import TicTacToeGameType as game
+import FiveInARowGameType as game
+# import TicTacToeGameType as game
 
 DIM=(0,0)
 SIDE=0
@@ -37,7 +37,6 @@ def prepare(init_state,K,what_side,op_name):
     return
 
   if what_side.lower()=='x': SIDE=1
-  print('side='+str(SIDE))
 
   init_valid_square_lists()
   # init_board=parse_state(init_state)
@@ -57,47 +56,34 @@ POS_INF=100000
 def makeMove(currState, currRemark, timeLim=10000):
   global ZOBRIST_VALS,Z_HASH_TABLE,DIM,K_WIN,SIDE,OP_NAME
 
-  newboard=[];move=(0,0)
+  newboard=[]
+  newRemark=""
+  mm=mini_max(currState[0],currState[1],MAX_PLY)
+  newboard=mm[0]
+  bestEval=mm[1]
 
-  bestEval=mini_max(currState[0],currState[1],MAX_PLY)
-  if bestEval == NEG_INF or bestEval == POS_INF:
-    raise ValueError("MAX_PLY greater than empty spaces on board" )
-    return
-  # find single ply state with matching mini_max score
-  for z in Z_HASH_TABLE:
-    # print(display_board(Z_HASH_TABLE[z][0]))
-    if (Z_HASH_TABLE[z][2] == 1) and (Z_HASH_TABLE[z][1] == bestEval):
-      newboard=Z_HASH_TABLE[z][0]
-  if newboard == []:
-    raise ValueError("new board not generated" )
-    return
-
-  move=get_move(currState[0],newboard)
-
-  #DEBUG#
+  # DEBUG#
   print("currstate\n"+display_board(currState[0])+\
-        currState[1]+" placed at "+str(move)+\
+        currState[1]+" placed at "+str(get_move(currState[0],newboard))+\
         "\nnewboard\n"+display_board(newboard)+\
         "bestVal="+str(bestEval)) #DEBUG#
 
-
-  #convert to state
-
-  # newstate=[[newboard],get_other(currState[1])]
-  return #[[move,newState],newRemark]
+  return [[get_move(currState[0],newboard),\
+           [newboard,get_other(currState[1])]],\
+            newRemark]
 
 #pass whoseMove= 'x' or 'o'
 def mini_max(board,whoseMove,plyRemaining):
   global Z_HASH_TABLE,metWinCond
 
-  successors=[]
+  successors=[]; newboard=[]
   # determine if max or min player
   if whoseMove.lower()=='x': who='max'
   else: who='min'
 
   if plyRemaining == 0: #leaf node in look ahead
-    print("ply: "+str(MAX_PLY-plyRemaining)+"\n"+display_board(board)+"staticEval="+str(staticEval(board))) #DEBUG#
-    return staticEval(board)
+    # print("ply: "+str(MAX_PLY-plyRemaining)+"\n"+display_board(board)+"staticEval="+str(staticEval(board))) #DEBUG#
+    return [board,staticEval(board)]
   if who=='max':
     minimaxVal=-100000
     successors=get_successors(board,'x')
@@ -107,21 +93,18 @@ def mini_max(board,whoseMove,plyRemaining):
   #DEBUG#
   # print("ply: "+str(MAX_PLY-plyRemaining)+"\twhose turn: "+who+"\n"+display_board(board)+"get successors...")
   for s in successors:
-        # no need to check the others if win condition is met
-    if metWinCond: print('won='+str(minimaxVal));return minimaxVal
+    # no need to check the others if win condition is met
+    if metWinCond: return [s,minimaxVal]
 
-    newVal=mini_max(s,get_other(whoseMove),plyRemaining-1)
+    mm=mini_max(s,get_other(whoseMove),plyRemaining-1)
+    newVal=mm[1]
     # get max or min static eval score based on whose move
     if(who=='max' and newVal>minimaxVal) or (who=='min' and newVal<minimaxVal):
       minimaxVal=newVal
+      newboard=deepcopy(s)
       # print("ply "+str(MAX_PLY-plyRemaining)+"--> "+str(newVal)) #DEBUG#
 
-    if MAX_PLY-plyRemaining != 0: # store all but root and leaves in hash table
-      Z_HASH_TABLE[z_hash_code(board)] = [board,newVal,MAX_PLY-plyRemaining]
-      # print("***store\n"+display_board(board)+"val="+str(newVal)+"\tply="+str(MAX_PLY-plyRemaining))#DEBUG#
-
-
-  return minimaxVal
+  return [newboard,minimaxVal]
 
 
 def staticEval(board):
@@ -250,7 +233,6 @@ def z_hash_code(board):
       if board[ii][jj].lower()=='x': side=1
       if board[ii][jj].lower()=='o': side=0
       if side!=None: val ^= ZOBRIST_VALS[ii*DIM[1]+jj][side]
-
 
   return val
 
