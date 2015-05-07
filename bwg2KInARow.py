@@ -3,8 +3,8 @@
 from re import *   # Loads the regular expression module.
 from random import randint
 from copy import deepcopy
-import FiveInARowGameType as game
-# import TicTacToeGameType as game
+# import FiveInARowGameType as game
+import TicTacToeGameType as game
 
 DIM=(0,0)
 SIDE=0
@@ -62,11 +62,11 @@ def makeMove(currState, currRemark, timeLim=10000):
   newboard=mm[0]
   bestEval=mm[1]
 
-  # DEBUG#
-  print("currstate\n"+display_board(currState[0])+\
-        currState[1]+" placed at "+str(get_move(currState[0],newboard))+\
-        "\nnewboard\n"+display_board(newboard)+\
-        "bestVal="+str(bestEval)) #DEBUG#
+  # # DEBUG#
+  # print("currstate\n"+display_board(currState[0])+\
+  #       currState[1]+" placed at "+str(get_move(currState[0],newboard))+\
+  #       "\nnewboard\n"+display_board(newboard)+\
+  #       "bestVal="+str(bestEval)) #DEBUG#
 
   return [[get_move(currState[0],newboard),\
            [newboard,get_other(currState[1])]],\
@@ -94,7 +94,7 @@ def mini_max(board,whoseMove,plyRemaining):
   # print("ply: "+str(MAX_PLY-plyRemaining)+"\twhose turn: "+who+"\n"+display_board(board)+"get successors...")
   for s in successors:
     # no need to check the others if win condition is met
-    if metWinCond: return [s,minimaxVal]
+    if metWinCond: metWinCond=False; return [deepcopy(s),minimaxVal]
 
     mm=mini_max(s,get_other(whoseMove),plyRemaining-1)
     newVal=mm[1]
@@ -157,7 +157,7 @@ def get_successors(state,who):
       newState=deepcopy(state)
 
       if newState[ii][jj] == ' ':
-        newState[ii][jj] = who
+        newState[ii][jj] = who.capitalize()
         successors.append(newState)
         # print("newstate \t"+str(newState)) #DEBUG#
 
