@@ -17,6 +17,22 @@ else:
 WINS=0; LOSES=0
 MAX_PRIORITY=Q.PriorityQueue()
 
+
+def main():
+  print("\nWelcome to the Montyhall Problem. Starting games...\n")
+  report_game_summary(play_n_rounds())
+  return
+
+def play_n_rounds():
+  rounds = int(NGAMES)
+  stats = [0,0] # 0 --> losses, 1--> wins
+  while rounds > 0:
+    if play_game(): stats[1]+=1
+    else: stats[0]+=1
+    rounds-=1
+  # print(stats) #DEBUG#
+  return stats
+
 def play_game():
   curr_state=create_init_state();
   print(describe_state(curr_state),end='')
@@ -29,8 +45,21 @@ def play_game():
     print(", "+describe_state(next_state),end='')
     curr_state=next_state
   print()
+  selected=[d for d in curr_state if d[0]=='>' and d[1].isupper()]
+  # print("prize: "+str(selected)) #DEBUG#
+  return selected[0][1].lower() == 'c'
 
+def report_game_summary(stats):
+  losses=stats[0]
+  wins=stats[1]
+  perc_loss = losses/int(NGAMES)
+  perc_wins = wins/int(NGAMES)
 
+  sum_vars = [NGAMES,POLICY,losses,wins,perc_loss,perc_wins]
+  summary = "\nGame Summary:\n\tgames played\t{:s}\tplayer policy\t{:s}\n\t"+\
+            "total losses\t{:d}\ttotal wins\t{:d}\n\t"+\
+            "\t\t{:.2%}\t\t\t{:.2%}"
+  print(summary.format(*sum_vars))
   return
 
 def create_init_state():
@@ -86,13 +115,15 @@ def can_move(state,d):
       # if d == selected and toSwap != selected: print("\tplayer can swap") #DEBUG#
       return d == selected
     if d == selected:
-      MOVE = "h_open"
+      MOVE = ["h_open"]
       # print("\thost can reveal prize") #DEBUG#
       return True
   return False
 
 def move(state,d):
   global MOVE
+
+  # print(describe_state(state)+'\nDoor:'+str(d)+"\tmove: "+str(MOVE))
 
   newstate = deep_copy(state)
   if "p_sel" in MOVE[0]: newstate[randint(0,2)][0]='>' # player select random
@@ -115,19 +146,24 @@ OPERATORS = [["operating on door "+str(d),\
              lambda s,d=d: move(s,d)]
              for d in range(3)]
 def test():
-  state=create_init_state()
-  state[0][0]='>'
+  # state=create_init_state()
+  # state[0][0]='>'
   # state[1][1]=state[1][1].capitalize()
   # state[2][1]=state[2][1].capitalize()
-  for ii in range(3):
-    print( describe_state(state) )
-    print( str(OPERATORS[ii][0])+"\n"+\
-           str(OPERATORS[ii][1](state))+"\n"+\
-           str(OPERATORS[ii][2](state)) )
+  # for ii in range(3):
+    # print( describe_state(state) )
+    # print( str(OPERATORS[ii][0])+"\n"+\
+    #        str(OPERATORS[ii][1](state))+"\n"+\
+    #        str(OPERATORS[ii][2](state)) )
+  #test single game
+  # play_game()
+  #test multi games
+  # play_n_rounds()
+  # report_game_summary([0,0])
+  return
 
 # test()
-play_game()
-
+main()
 
 
 
