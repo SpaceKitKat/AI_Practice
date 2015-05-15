@@ -1,0 +1,38 @@
+Bilkit Githinji, 1263465. CSE 415, Spring 2015, Univeristy of Washington.
+Instructor: Steve Tanimono.
+Assignment 6 Part I
+
+Exercise 1:
+  Events: K=king, H=heart, D=diamond
+  a) P(K)	= 1/13
+  b) P(H)	= 1/4
+  c) P(HvD)	= (1/4+1/4)-0 = 1/2
+  d) P(KvH)	= (1/13+1/4)-1/52 = 4/13
+
+Exercise 2:
+  Events: N=startup goes public within 8yrs
+ 	  A=file patent  
+  P(N|A) = P(N^A)/P(A)
+ 	 = [P(A|N)*P(N)] / [P(A|N)*P(N) + P(A|~N)*(1-P(N))]
+	 = .14
+
+Exercise 3:
+  v 	  = 0
+  P(s)	  = 0.0001
+  P(h1)	  = 0.0001
+  P(h2)   = 0.0002
+  P(h3)   = 0.1
+  P(s|h1) = 0.06
+  P(s|h2) = 0.125
+  P(s|h3) = 0.001
+  
+  P(h1,s) = P(s|h1)*P(h1) = 6e-6
+  P(h2,s) = P(s|h2)*P(h2) = 25e-6
+  P(h3,s) = P(s|h3)*P(h3) = 100e-6
+
+  P(h4|s) = max[ P(h1,s)/P(s),P(h2,s)/P(s) ] = P(h2,s)/P(s) 
+  P(h5|s) = min{ ( 1-max[P(h1|s),P(h2|s)] ),P(h3|s) } = 1-P(h4|s) 
+
+  P(h4,s) = P(h2,s)/P(s)*P(s) = 25e-6
+  P(h5,s) = (1-P(h4|s))*P(s)  = 75e-6
+  P(c1,s) = max[ P(h4|s),P(h5|s) ] = P(h5,s)/P(s) = .75
